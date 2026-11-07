@@ -31,40 +31,73 @@ $$u_i^{t+1} = 0.5 \cdot (u_{i-1}^t + u_{i+1}^t)$$
 
 ### Jak uruchomić projekt
 
-1. **Wymagania wstępne:**
-   - Zainstalowany kompilator C++ obsługujący standard C++17 lub nowszy (np. `g++`).
-   - Narzędzie `make` (opcjonalnie).
+#### **Wymagania wstępne:**
 
-2. **Konfiguracja środowiska**
-   Warto skonfigurować środowisko projektu na jeden z dwóch sposobów:
-   - **Opcja A: Automatycznie (zalecane)**
+- Zainstalowany kompilator C++ obsługujący standard C++17 lub nowszy (np. `g++`).
+- Narzędzie `make` (opcjonalnie).
 
-     Uruchom przygotowany skrypt konfiguracyjny, który sprawdzi wymagane narzędzia (`git`, `g++`), skonfiguruje ścieżkę do hooków oraz nada odpowiednie uprawnienia:
+#### **Konfiguracja środowiska**
 
-     ```bash
-     ./setup.sh
-     ```
+Warto skonfigurować środowisko projektu na jeden z dwóch sposobów:
 
-   - **Opcja B: Ręcznie**
+- **Opcja A: Automatycznie (zalecane)**
 
-     Jeśli wolisz przeprowadzić konfigurację manualnie, upewnij się, że posiadasz zainstalowane narzędzia `git` oraz `g++`, a następnie wykonaj w terminalu następujące polecenia:
+  Uruchom przygotowany skrypt konfiguracyjny, który sprawdzi wymagane narzędzia (`git`, `g++`), skonfiguruje ścieżkę do hooków oraz nada odpowiednie uprawnienia:
 
-     ```bash
-     git config core.hooksPath .githooks
-     chmod +x .githooks/pre-commit
-     ```
+  ```bash
+  ./setup.sh
+  ```
 
-3. **Kompilacja i uruchomienie:**
-   Utwórz katalog na pliki wynikowe i skompiluj program za pomocą polecenia:
+- **Opcja B: Ręcznie**
 
-   ```bash
-   mkdir -p build
-   g++ main.cpp -o build/main
-   ./build/main
-   ```
+  Jeśli wolisz przeprowadzić konfigurację manualnie, upewnij się, że posiadasz zainstalowane narzędzia `git` oraz `g++`, a następnie wykonaj w terminalu następujące polecenia:
 
-   lub za pomocą skryptu (nie zapomnij o nadaniu praw do wykonywania `chmod +x ./build.sh`)
+  ```bash
+  git config core.hooksPath .githooks
+  chmod +x .githooks/pre-commit
+  ```
 
-   ```bash
-   ./build.sh
-   ```
+#### **Kompilacja i uruchomienie:**
+
+Utwórz katalog na pliki wynikowe i skompiluj program za pomocą polecenia:
+
+```bash
+mkdir -p build
+g++ -O2 -c main.cpp -o build/main.o
+g++ -O2 -c naive.cpp -o build/naive.o
+g++ -O2 -c utils.cpp -o build/utils.o
+g++ -O2 -mavx2 -c avx2.cpp -o build/avx2.o
+g++ -O2 -mavx512f -c avx512.cpp -o build/avx512.o
+g++ build/*.o -o build/main
+./build/main
+```
+
+lub za pomocą skryptu (nie zapomnij o nadaniu praw do wykonywania `chmod +x ./build.sh`):
+
+```bash
+./build.sh
+```
+
+**Dostępne parametry programu:**
+
+Program przyjmuje następujące opcjonalne flagi:
+
+| Flaga                       | Opis                                                                                       |
+| --------------------------- | ------------------------------------------------------------------------------------------ |
+| `-a`, `--algorithm <nazwa>` | Wybór algorytmu symulacji (domyślnie: `naive`). Dostępne opcje: `naive`, `avx2`, `avx512`. |
+| `-n`, `--size <liczba>`     | Długość pręta $N$, min. 3 (domyślnie: `10`).                                               |
+| `-s`, `--steps <liczba>`    | Liczba kroków czasowych (domyślnie: `5`).                                                  |
+| `-v`, `--verbose`           | Tryb rozszerzony: wyświetla stan początkowy oraz końcowy pręta.                            |
+
+**Przykłady użycia:**
+
+```bash
+# Uruchomienie z domyślnymi parametrami (naive, N=10, steps=5)
+./build.sh
+
+# Uruchomienie algorytmu AVX2 dla pręta o rozmiarze 10000 i 1000 krokach
+./build.sh -a avx2 -n 10000 -s 1000
+
+# Wykonanie algorytmu AVX-512 z wypisaniem wyników (tryb verbose)
+./build.sh -a avx512 -n 20 -s 10 -v
+```
