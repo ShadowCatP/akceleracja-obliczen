@@ -1,3 +1,4 @@
+#include "avx512.hpp"
 #include "naive.hpp"
 #include "utils.hpp"
 #include <chrono>
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]) {
   }
 
   std::map<std::string, std::function<std::vector<double>(int, int)>> algo_map =
-      {{"naive", run_naive_sim}};
+      {{"naive", run_naive_sim}, {"avx512", run_avx512_sim}};
 
   if (algo_map.find(algo_name) == algo_map.end()) {
     std::cerr << "unkown algorithm: " << algo_name << std::endl;

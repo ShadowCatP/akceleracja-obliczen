@@ -3,6 +3,6 @@
 set -e
 
 mkdir -p build
-g++ -O2 *.cpp -o build/main
+g++ -O2 -mavx512f *.cpp -o build/main
 
 ./build/main "$@"

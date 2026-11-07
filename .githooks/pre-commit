@@ -13,6 +13,6 @@ done
 
 echo "verifying build..."
 mkdir -p build
-g++ -O2 *.cpp -o build/main
+g++ -O2 -mavx512f *.cpp -o build/main
 
 echo "pre-commit checks passed"
