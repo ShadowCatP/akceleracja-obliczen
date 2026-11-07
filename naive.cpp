@@ -3,15 +3,18 @@
 #include <iostream>
 #include <vector>
 
-void run_naive_sim() {
-  const int N = 10;
-  const int steps = 5;
+void run_naive_sim(int n, int steps) {
   const int field_width = 6;
 
-  std::vector<double> u_current(N, 0.0);
-  std::vector<double> u_next(N, 0.0);
+  if (n < 3) {
+    std::cerr << "rod size n must be at least 3" << std::endl;
+    return;
+  }
 
-  u_current[N / 2] = 100.0; // initial heat source in the middle of the rod
+  std::vector<double> u_current(n, 0.0);
+  std::vector<double> u_next(n, 0.0);
+
+  u_current[n / 2] = 100.0; // initial heat source in the middle of the rod
 
   std::cout << "Initial state (Algorithm - naive):\n";
   std::cout << std::setw(8) << "";
@@ -24,9 +27,9 @@ void run_naive_sim() {
 
   for (int t = 0; t < steps; ++t) {
     u_next[0] = 0.0;
-    u_next[N - 1] = 0.0;
+    u_next[n - 1] = 0.0;
 
-    for (int i = 1; i < N - 1; ++i) {
+    for (int i = 1; i < n - 1; ++i) {
       u_next[i] = 0.5 * (u_current[i - 1] + u_current[i + 1]);
     }
 

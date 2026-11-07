@@ -7,11 +7,19 @@ enum class Algorithm { Naive, Unknown };
 
 int main(int argc, char *argv[]) {
   std::string algo_name = "naive";
+  int N = 10;
+  int steps = 5;
 
   for (int i = 1; i < argc; ++i) {
     std::string arg = argv[i];
     if ((arg == "-a" || arg == "--algorithm") && i + 1 < argc) {
       algo_name = argv[i + 1];
+      i++;
+    } else if ((arg == "-n" || arg == "--size") && i + 1 < argc) {
+      N = std::stoi(argv[i + 1]);
+      i++;
+    } else if ((arg == "-s" || arg == "--steps") && i + 1 < argc) {
+      steps = std::stoi(argv[i + 1]);
       i++;
     }
   }
@@ -25,7 +33,7 @@ int main(int argc, char *argv[]) {
 
   switch (selected_algo) {
   case Algorithm::Naive:
-    run_naive_sim();
+    run_naive_sim(N, steps);
     break;
   default:
     std::cerr << "Unknown algorithm: " << algo_name << std::endl;
