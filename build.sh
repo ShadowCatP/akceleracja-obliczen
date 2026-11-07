@@ -3,6 +3,6 @@
 set -e
 
 mkdir -p build
-g++ main.cpp -o build/main
+g++ -O2 main.cpp naive.cpp -o build/main
 
-./build/main
+./build/main "$@"
