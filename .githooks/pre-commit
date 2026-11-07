@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+echo "pre-commit checks..."
+
+echo "formatting files..."
+for file in $(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cpp|hpp)$'); do
+  if [ -f "$file" ]; then
+    clang-format -i "$file"
+    git add "$file"
+  fi
+done
+
+echo "verifying build..."
+mkdir -p build
+g++ -O2 *.cpp -o build/main
+
+echo "pre-commit checks passed"
