@@ -35,7 +35,26 @@ $$u_i^{t+1} = 0.5 \cdot (u_{i-1}^t + u_{i+1}^t)$$
    - Zainstalowany kompilator C++ obsługujący standard C++17 lub nowszy (np. `g++`).
    - Narzędzie `make` (opcjonalnie).
 
-2. **Kompilacja i uruchomienie:**
+2. **Konfiguracja środowiska**
+   Warto skonfigurować środowisko projektu na jeden z dwóch sposobów:
+   - **Opcja A: Automatycznie (zalecane)**
+
+     Uruchom przygotowany skrypt konfiguracyjny, który sprawdzi wymagane narzędzia (`git`, `g++`), skonfiguruje ścieżkę do hooków oraz nada odpowiednie uprawnienia:
+
+     ```bash
+     ./setup.sh
+     ```
+
+   - **Opcja B: Ręcznie**
+
+     Jeśli wolisz przeprowadzić konfigurację manualnie, upewnij się, że posiadasz zainstalowane narzędzia `git` oraz `g++`, a następnie wykonaj w terminalu następujące polecenia:
+
+     ```bash
+     git config core.hooksPath .githooks
+     chmod +x .githooks/pre-commit
+     ```
+
+3. **Kompilacja i uruchomienie:**
    Utwórz katalog na pliki wynikowe i skompiluj program za pomocą polecenia:
 
    ```bash
