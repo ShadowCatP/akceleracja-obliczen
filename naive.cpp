@@ -3,22 +3,22 @@
 #include <iostream>
 #include <vector>
 
-std::vector<double> run_naive_sim(int n, int steps, bool use_improved_formula) {
-  std::vector<double> u_current(n, 0.0);
-  std::vector<double> u_next(n, 0.0);
+std::vector<float> run_naive_sim(int n, int steps, bool use_improved_formula) {
+  std::vector<float> u_current(n, 0.0f);
+  std::vector<float> u_next(n, 0.0f);
 
-  u_current[n / 2] = 100.0; // initial heat source in the middle of the rod
+  u_current[n / 2] = 100.0f; // initial heat source in the middle of the rod
 
   for (int t = 0; t < steps; ++t) {
-    u_next[0] = 0.0;
-    u_next[n - 1] = 0.0;
+    u_next[0] = 0.0f;
+    u_next[n - 1] = 0.0f;
 
     for (int i = 1; i < n - 1; ++i) {
       if (use_improved_formula) {
         u_next[i] =
-            0.5 * u_current[i] + 0.25 * (u_current[i - 1] + u_current[i + 1]);
+            0.5f * u_current[i] + 0.25f * (u_current[i - 1] + u_current[i + 1]);
       } else {
-        u_next[i] = 0.5 * (u_current[i - 1] + u_current[i + 1]);
+        u_next[i] = 0.5f * (u_current[i - 1] + u_current[i + 1]);
       }
     }
 

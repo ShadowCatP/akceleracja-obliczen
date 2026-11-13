@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  std::map<std::string, std::function<std::vector<double>(int, int, bool)>>
+  std::map<std::string, std::function<std::vector<float>(int, int, bool)>>
       algo_map = {{"naive", run_naive_sim},
                   {"avx512", run_avx512_sim},
                   {"avx2", run_avx2_sim}};
@@ -53,14 +53,14 @@ int main(int argc, char *argv[]) {
   }
 
   if (verbose) {
-    std::vector<double> init_state(N, 0.0);
-    init_state[N / 2] = 100.0;
+    std::vector<float> init_state(N, 0.0f);
+    init_state[N / 2] = 100.0f;
     print_state("Initial state (Algorithm - " + algo_name + ")", init_state);
   }
 
   auto start_time = std::chrono::high_resolution_clock::now();
 
-  std::vector<double> final_state =
+  std::vector<float> final_state =
       algo_map[algo_name](N, steps, improved_formula);
 
   auto end_time = std::chrono::high_resolution_clock::now();
