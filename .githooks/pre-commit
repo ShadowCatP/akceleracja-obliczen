@@ -11,8 +11,12 @@ for file in $(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cpp|
   fi
 done
 
-echo "verifying build..."
-cmake -S . -B build
-cmake --build build --config Debug
+if git diff --cached --name-only --diff-filter=ACM | grep -Eq '(^|/)(CMakeLists\.txt|.*\.(cpp|hpp|cu|cmake))$'; then
+  echo "verifying build..."
+  cmake -S . -B build
+  cmake --build build --config Debug
+else
+  echo "no source files changed, skipping build..."
+fi
 
 echo "pre-commit checks passed"
