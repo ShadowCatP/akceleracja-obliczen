@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 
-std::vector<double> run_naive_sim(int n, int steps) {
+std::vector<double> run_naive_sim(int n, int steps, bool use_improved_formula) {
   std::vector<double> u_current(n, 0.0);
   std::vector<double> u_next(n, 0.0);
 
@@ -14,7 +14,12 @@ std::vector<double> run_naive_sim(int n, int steps) {
     u_next[n - 1] = 0.0;
 
     for (int i = 1; i < n - 1; ++i) {
-      u_next[i] = 0.5 * (u_current[i - 1] + u_current[i + 1]);
+      if (use_improved_formula) {
+        u_next[i] =
+            0.5 * u_current[i] + 0.25 * (u_current[i - 1] + u_current[i + 1]);
+      } else {
+        u_next[i] = 0.5 * (u_current[i - 1] + u_current[i + 1]);
+      }
     }
 
     std::swap(u_current, u_next);

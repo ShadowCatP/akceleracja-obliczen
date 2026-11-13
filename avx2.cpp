@@ -2,13 +2,15 @@
 #include <immintrin.h>
 #include <vector>
 
-std::vector<double> run_avx2_sim(int n, int steps) {
+std::vector<double> run_avx2_sim(int n, int steps, bool use_improved_formula) {
   std::vector<double> u_current(n, 0.0);
   std::vector<double> u_next(n, 0.0);
 
   u_current[n / 2] = 100.0;
 
   __m256d v_half = _mm256_set1_pd(0.5);
+  __m256d v_center_coeff = _mm256_set1_pd(0.5);
+  __m256d v_neighbor_coeff = _mm256_set1_pd(0.25);
 
   for (int t = 0; t < steps; ++t) {
     u_next[0] = 0.0;
@@ -18,17 +20,37 @@ std::vector<double> run_avx2_sim(int n, int steps) {
 
     // avx2 can hold 4 doubles at a time
     for (; i < n - 5; i += 4) {
-      __m256d v_left = _mm256_loadu_pd(&u_current[i - 1]);
-      __m256d v_right = _mm256_loadu_pd(&u_current[i + 1]);
+      if (use_improved_formula) {
+        __m256d v_center = _mm256_loadu_pd(&u_current[i]);
+        __m256d v_left = _mm256_loadu_pd(&u_current[i - 1]);
+        __m256d v_right = _mm256_loadu_pd(&u_current[i + 1]);
 
-      __m256d v_sum = _mm256_add_pd(v_left, v_right);
-      __m256d v_res = _mm256_mul_pd(v_sum, v_half);
+        __m256d v_sum_neighbors = _mm256_add_pd(v_left, v_right);
 
-      _mm256_storeu_pd(&u_next[i], v_res);
+        __m256d term_center = _mm256_mul_pd(v_center, v_center_coeff);
+        __m256d term_neighbors =
+            _mm256_mul_pd(v_sum_neighbors, v_neighbor_coeff);
+
+        __m256d v_res = _mm256_add_pd(term_center, term_neighbors);
+        _mm256_storeu_pd(&u_next[i], v_res);
+      } else {
+        __m256d v_left = _mm256_loadu_pd(&u_current[i - 1]);
+        __m256d v_right = _mm256_loadu_pd(&u_current[i + 1]);
+
+        __m256d v_sum = _mm256_add_pd(v_left, v_right);
+        __m256d v_res = _mm256_mul_pd(v_sum, v_half);
+
+        _mm256_storeu_pd(&u_next[i], v_res);
+      }
     }
 
     for (; i < n - 1; ++i) {
-      u_next[i] = 0.5 * (u_current[i - 1] + u_current[i + 1]);
+      if (use_improved_formula) {
+        u_next[i] =
+            0.5 * u_current[i] + 0.25 * (u_current[i - 1] + u_current[i + 1]);
+      } else {
+        u_next[i] = 0.5 * (u_current[i - 1] + u_current[i + 1]);
+      }
     }
 
     std::swap(u_current, u_next);

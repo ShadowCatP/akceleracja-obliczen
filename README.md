@@ -82,12 +82,13 @@ lub za pomocą skryptu (nie zapomnij o nadaniu praw do wykonywania `chmod +x ./b
 
 Program przyjmuje następujące opcjonalne flagi:
 
-| Flaga                       | Opis                                                                                       |
-| --------------------------- | ------------------------------------------------------------------------------------------ |
-| `-a`, `--algorithm <nazwa>` | Wybór algorytmu symulacji (domyślnie: `naive`). Dostępne opcje: `naive`, `avx2`, `avx512`. |
-| `-n`, `--size <liczba>`     | Długość pręta $N$, min. 3 (domyślnie: `10`).                                               |
-| `-s`, `--steps <liczba>`    | Liczba kroków czasowych (domyślnie: `5`).                                                  |
-| `-v`, `--verbose`           | Tryb rozszerzony: wyświetla stan początkowy oraz końcowy pręta.                            |
+| Flaga                       | Opis                                                                                                                                                                       |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-a`, `--algorithm <nazwa>` | Wybór algorytmu symulacji (domyślnie: `naive`). Dostępne opcje: `naive`, `avx2`, `avx512`.                                                                                 |
+| `-n`, `--size <liczba>`     | Długość pręta $N$, min. 3 (domyślnie: `10`).                                                                                                                               |
+| `-s`, `--steps <liczba>`    | Liczba kroków czasowych (domyślnie: `5`).                                                                                                                                  |
+| `-v`, `--verbose`           | Tryb rozszerzony: wyświetla stan początkowy oraz końcowy pręta.                                                                                                            |
+| `-i`, `--improved-formula`  | Używa ulepszonego wzoru na obliczenie temperatury: $u_{\text{next}}[i] = 0.5 \cdot u_{\text{current}}[i] + 0.25 \cdot (u_{\text{current}}[i-1] + u_{\text{current}}[i+1])$ |
 
 **Przykłady użycia:**
 

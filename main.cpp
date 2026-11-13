@@ -15,6 +15,7 @@ int main(int argc, char *argv[]) {
   int N = 10;
   int steps = 5;
   bool verbose = false;
+  bool improved_formula = false;
 
   for (int i = 1; i < argc; ++i) {
     std::string arg = argv[i];
@@ -29,6 +30,8 @@ int main(int argc, char *argv[]) {
       i++;
     } else if ((arg == "-v" || arg == "--verbose")) {
       verbose = true;
+    } else if ((arg == "-i" || arg == "--improved-formula")) {
+      improved_formula = true;
     }
   }
 
@@ -37,10 +40,10 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  std::map<std::string, std::function<std::vector<double>(int, int)>> algo_map =
-      {{"naive", run_naive_sim},
-       {"avx512", run_avx512_sim},
-       {"avx2", run_avx2_sim}};
+  std::map<std::string, std::function<std::vector<double>(int, int, bool)>>
+      algo_map = {{"naive", run_naive_sim},
+                  {"avx512", run_avx512_sim},
+                  {"avx2", run_avx2_sim}};
 
   if (algo_map.find(algo_name) == algo_map.end()) {
     std::cerr << "unkown algorithm: " << algo_name << std::endl;
@@ -57,7 +60,8 @@ int main(int argc, char *argv[]) {
 
   auto start_time = std::chrono::high_resolution_clock::now();
 
-  std::vector<double> final_state = algo_map[algo_name](N, steps);
+  std::vector<double> final_state =
+      algo_map[algo_name](N, steps, improved_formula);
 
   auto end_time = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double, std::milli> elapsed = end_time - start_time;
