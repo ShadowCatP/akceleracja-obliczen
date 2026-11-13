@@ -33,8 +33,11 @@ $$u_i^{t+1} = 0.5 \cdot (u_{i-1}^t + u_{i+1}^t)$$
 
 #### **Wymagania wstępne:**
 
-- Zainstalowany kompilator C++ obsługujący standard C++17 lub nowszy (np. `g++`).
-- Narzędzie `make` (opcjonalnie).
+- CMake 3.15 lub nowszy.
+- Kompilator C++ obsługujący standard C++17.
+- CUDA Toolkit z kompilatorem `nvcc` wymagany do budowania i uruchamiania algorytmu `cuda`.
+- Na Windows: Visual Studio z obsługą C++.
+- Na Linux: kompilator C++ oraz `make` lub Ninja.
 
 #### **Konfiguracja środowiska**
 
@@ -59,23 +62,30 @@ Warto skonfigurować środowisko projektu na jeden z dwóch sposobów:
 
 #### **Kompilacja i uruchomienie:**
 
-Utwórz katalog na pliki wynikowe i skompiluj program za pomocą polecenia:
+Skonfiguruj projekt i zbuduj konfigurację Debug za pomocą CMake:
 
 ```bash
-mkdir -p build
-g++ -O2 -c main.cpp -o build/main.o
-g++ -O2 -c naive.cpp -o build/naive.o
-g++ -O2 -c utils.cpp -o build/utils.o
-g++ -O2 -mavx2 -c avx2.cpp -o build/avx2.o
-g++ -O2 -mavx512f -c avx512.cpp -o build/avx512.o
-g++ build/*.o -o build/main
+cmake -S . -B build
+cmake --build build --config Debug
+```
+
+Na Windows uruchom program:
+
+```bat
+build\Debug\main.exe
+```
+
+Na Linux uruchom program:
+
+```bash
 ./build/main
 ```
 
-lub za pomocą skryptu (nie zapomnij o nadaniu praw do wykonywania `chmod +x ./build.sh`):
+Jeśli używasz CUDA 13.x, projekt domyślnie buduje kod dla architektury CUDA 75.
+Możesz ustawić inną obsługiwaną architekturę podczas konfiguracji:
 
 ```bash
-./build.sh
+cmake -S . -B build -DCMAKE_CUDA_ARCHITECTURES=75
 ```
 
 **Dostępne parametry programu:**
@@ -84,7 +94,7 @@ Program przyjmuje następujące opcjonalne flagi:
 
 | Flaga                       | Opis                                                                                                                                                                       |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-a`, `--algorithm <nazwa>` | Wybór algorytmu symulacji (domyślnie: `naive`). Dostępne opcje: `naive`, `avx2`, `avx512`.                                                                                 |
+| `-a`, `--algorithm <nazwa>` | Wybór algorytmu symulacji (domyślnie: `naive`). Dostępne opcje: `naive`, `avx2`, `avx512`, `cuda`.                                                                         |
 | `-n`, `--size <liczba>`     | Długość pręta $N$, min. 3 (domyślnie: `10`).                                                                                                                               |
 | `-s`, `--steps <liczba>`    | Liczba kroków czasowych (domyślnie: `5`).                                                                                                                                  |
 | `-v`, `--verbose`           | Tryb rozszerzony: wyświetla stan początkowy oraz końcowy pręta.                                                                                                            |
@@ -94,11 +104,14 @@ Program przyjmuje następujące opcjonalne flagi:
 
 ```bash
 # Uruchomienie z domyślnymi parametrami (naive, N=10, steps=5)
-./build.sh
+./build/main
 
 # Uruchomienie algorytmu AVX2 dla pręta o rozmiarze 10000 i 1000 krokach
-./build.sh -a avx2 -n 10000 -s 1000
+./build/main -a avx2 -n 10000 -s 1000
 
 # Wykonanie algorytmu AVX-512 z wypisaniem wyników (tryb verbose)
-./build.sh -a avx512 -n 20 -s 10 -v
+./build/main -a avx512 -n 20 -s 10 -v
+
+# Uruchomienie algorytmu CUDA
+./build/main -a cuda -n 10000 -s 1000
 ```
