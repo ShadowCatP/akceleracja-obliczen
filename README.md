@@ -41,24 +41,34 @@ $$u_i^{t+1} = 0.5 \cdot (u_{i-1}^t + u_{i+1}^t)$$
 
 #### **Konfiguracja środowiska**
 
-Warto skonfigurować środowisko projektu na jeden z dwóch sposobów:
+Skrypt konfiguracyjny sprawdza wymagane narzędzia i ustawia ścieżkę do hooków Git.
 
-- **Opcja A: Automatycznie (zalecane)**
+Na Bash/Linux lub Git Bash uruchom:
 
-  Uruchom przygotowany skrypt konfiguracyjny, który sprawdzi wymagane narzędzia (`git`, `g++`), skonfiguruje ścieżkę do hooków oraz nada odpowiednie uprawnienia:
+```bash
+./setup.sh
+```
 
-  ```bash
-  ./setup.sh
-  ```
+Na Windows Command Prompt uruchom:
 
-- **Opcja B: Ręcznie**
+```bat
+setup.bat
+```
 
-  Jeśli wolisz przeprowadzić konfigurację manualnie, upewnij się, że posiadasz zainstalowane narzędzia `git` oraz `g++`, a następnie wykonaj w terminalu następujące polecenia:
+Hook `pre-commit` formatuje zmienione pliki C++, a następnie buduje projekt, jeśli commit zawiera kod źródłowy lub pliki CMake. Dla Bash używany jest `.githooks/pre-commit`, a dla Windows `.githooks/pre-commit.bat`.
 
-  ```bash
-  git config core.hooksPath .githooks
-  chmod +x .githooks/pre-commit
-  ```
+Konfiguracja ręczna w Bash:
+
+```bash
+git config core.hooksPath .githooks
+chmod +x .githooks/pre-commit
+```
+
+Konfiguracja ręczna w Windows:
+
+```bat
+git config core.hooksPath .githooks
+```
 
 #### **Kompilacja i uruchomienie:**
 

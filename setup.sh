@@ -8,7 +8,9 @@ check_command() {
 }
 
 check_command git
-check_command g++
+check_command cmake
+check_command clang-format
+check_command nvcc
 
 git config core.hooksPath .githooks
 chmod +x .githooks/pre-commit
