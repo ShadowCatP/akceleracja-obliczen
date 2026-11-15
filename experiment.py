@@ -1,3 +1,11 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "matplotlib>=3.11.2",
+#     "pandas>=3.1.1",
+# ]
+# ///
+import argparse
 import csv
 import ctypes
 import platform
@@ -5,11 +13,25 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Final
+
+import matplotlib.pyplot as plt
+import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 BUILD_DIR = PROJECT_ROOT / "build"
 TIME_PATTERN = re.compile(r"Execution time:\s*([0-9.eE+-]+)\s*ms")
 PF_AVX512F_INSTRUCTIONS_AVAILABLE = 41
+ALGORITHM_LABELS: Final[dict[str, str]] = {
+    "naive": "Naiwny",
+    "avx2": "AVX2",
+    "avx512": "AVX-512",
+    "cuda": "CUDA",
+}
+
+EXPERIMENT_DIR: Final[Path] = PROJECT_ROOT / "experiment"
+EXPERIMENT_1_PATH: Final[Path] = EXPERIMENT_DIR / "experiment1_size_scaling.csv"
+EXPERIMENT_2_PATH: Final[Path] = EXPERIMENT_DIR / "experiment2_steps_scaling.csv"
 
 
 def supports_avx512() -> bool:
@@ -117,34 +139,103 @@ def run_experiment(
                 writer.writerow([algorithm, size, step_count, elapsed])
 
 
+def generate_plots(experiment_dir: Path) -> None:
+
+    if EXPERIMENT_1_PATH.exists():
+        df1 = pd.read_csv(EXPERIMENT_1_PATH)
+
+        plt.figure(figsize=(8, 5))
+        for alg, group in df1.groupby("Algorithm"):
+            plt.plot(
+                group["N"] / 1000,
+                group["Time_ms"],
+                marker="o",
+                linewidth=2,
+                label=ALGORITHM_LABELS.get(str(alg), str(alg)),
+            )
+
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.xlabel("Rozmiar pręta (tysiące elementów, skala logarytmiczna)")
+        plt.ylabel("Czas wykonania (ms, skala logarytmiczna)")
+        plt.title("Eksperyment 1: Skalowanie rozmiaru problemu (1000 kroków)")
+        plt.grid(True, which="both", linestyle="--", alpha=0.6)
+        plt.legend()
+        plt.tight_layout()
+
+        plot1_path = experiment_dir / "experiment1_size_scaling.png"
+        plt.savefig(plot1_path, dpi=300)
+        plt.close()
+        print(f"Saved plot: {plot1_path}")
+
+    if EXPERIMENT_2_PATH.exists():
+        df2 = pd.read_csv(EXPERIMENT_2_PATH)
+
+        plt.figure(figsize=(8, 5))
+        for alg, group in df2.groupby("Algorithm"):
+            plt.plot(
+                group["Steps"] / 1000,
+                group["Time_ms"] / 1000,
+                marker="o",
+                linewidth=2,
+                label=ALGORITHM_LABELS.get(str(alg), str(alg)),
+            )
+
+        plt.xlabel("Liczba kroków (tysiące)")
+        plt.ylabel("Czas wykonania (s)")
+        plt.title("Eksperyment 2: Skalowanie liczby kroków (N = 100 000)")
+        plt.grid(True, linestyle="--", alpha=0.6)
+        plt.legend()
+        plt.tight_layout()
+
+        plot2_path = experiment_dir / "experiment2_steps_scaling.png"
+        plt.savefig(plot2_path, dpi=300)
+        plt.close()
+        print(f"Saved plot: {plot2_path}")
+
+
 def main() -> None:
-    executable = build_project()
-    algorithms = detect_algorithms()
-    experiment_dir = PROJECT_ROOT / "experiment"
-    experiment_dir.mkdir(exist_ok=True)
-
-    print("=== Running Experiment 1: Size Scaling ===")
-    run_experiment(
-        executable,
-        algorithms,
-        experiment_dir / "experiment1_size_scaling.csv",
-        [100000, 1000000, 10000000, 100000000],
-        [1000] * 4,
+    parser = argparse.ArgumentParser(
+        description="Run heat simulation experiments and generate performance plots."
     )
-
-    print("=== Running Experiment 2: Step Count Scaling ===")
-    run_experiment(
-        executable,
-        algorithms,
-        experiment_dir / "experiment2_steps_scaling.csv",
-        [100000] * 4,
-        [10000, 50000, 1000000, 5000000],
+    parser.add_argument(
+        "-p",
+        "--plot-only",
+        action="store_true",
+        help="Skip running benchmarks and only regenerate plots from existing CSV files.",
     )
+    args = parser.parse_args()
 
-    print("=== Experiments Complete! ===")
-    print("Results saved to:")
-    print(" - experiment/experiment1_size_scaling.csv")
-    print(" - experiment/experiment2_steps_scaling.csv")
+    EXPERIMENT_DIR.mkdir(exist_ok=True)
+
+    if not args.plot_only:
+        executable = build_project()
+        algorithms = detect_algorithms()
+
+        print("=== Running Experiment 1: Size Scaling ===")
+        run_experiment(
+            executable,
+            algorithms,
+            EXPERIMENT_1_PATH,
+            [100000, 1000000, 10000000, 100000000],
+            [1000] * 4,
+        )
+
+        print("=== Running Experiment 2: Step Count Scaling ===")
+        run_experiment(
+            executable,
+            algorithms,
+            EXPERIMENT_2_PATH,
+            [100000] * 4,
+            [100000, 500000, 1000000, 5000000],
+        )
+
+        print("=== Experiments Complete! ===")
+        print("Results saved to:")
+        print(f" - {EXPERIMENT_1_PATH}")
+        print(f" - {EXPERIMENT_2_PATH}")
+
+    generate_plots(EXPERIMENT_DIR)
 
 
 if __name__ == "__main__":
