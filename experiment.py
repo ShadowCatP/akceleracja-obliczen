@@ -21,6 +21,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parent
 BUILD_DIR = PROJECT_ROOT / "build"
 TIME_PATTERN = re.compile(r"Execution time:\s*([0-9.eE+-]+)\s*ms")
+EXPERIMENT_RUNS: Final[int] = 3
 PF_AVX512F_INSTRUCTIONS_AVAILABLE = 41
 ALGORITHM_LABELS: Final[dict[str, str]] = {
     "naive": "Naiwny",
@@ -102,7 +103,7 @@ def detect_algorithms() -> list[str]:
     return algorithms
 
 
-def run_simulation(executable: Path, algorithm: str, size: int, steps: int) -> str:
+def run_simulation(executable: Path, algorithm: str, size: int, steps: int) -> float:
     result = subprocess.run(
         [str(executable), "-a", algorithm, "-n", str(size), "-s", str(steps)],
         cwd=PROJECT_ROOT,
@@ -115,7 +116,7 @@ def run_simulation(executable: Path, algorithm: str, size: int, steps: int) -> s
         raise RuntimeError(
             f"Could not parse execution time from output: {result.stdout!r}"
         )
-    return match.group(1)
+    return float(match.group(1))
 
 
 def run_experiment(
@@ -131,12 +132,18 @@ def run_experiment(
 
         for size, step_count in zip(sizes, steps):
             for algorithm in algorithms:
-                print(
-                    f"Testing - Algorithm: {algorithm} | "
-                    f"N: {size} | Steps: {step_count}"
-                )
-                elapsed = run_simulation(executable, algorithm, size, step_count)
-                writer.writerow([algorithm, size, step_count, elapsed])
+                elapsed_times = []
+                for run_number in range(1, EXPERIMENT_RUNS + 1):
+                    print(
+                        f"Algorithm: {algorithm} | N: {size} | Steps: {step_count} "
+                        f"| Run: {run_number}/{EXPERIMENT_RUNS}"
+                    )
+                    elapsed_times.append(
+                        run_simulation(executable, algorithm, size, step_count)
+                    )
+
+                average_time = sum(elapsed_times) / EXPERIMENT_RUNS
+                writer.writerow([algorithm, size, step_count, average_time])
 
 
 def generate_plots(experiment_dir: Path) -> None:
@@ -148,17 +155,15 @@ def generate_plots(experiment_dir: Path) -> None:
         for alg, group in df1.groupby("Algorithm"):
             plt.plot(
                 group["N"] / 1000,
-                group["Time_ms"],
+                group["Time_ms"] / 1000,
                 marker="o",
                 linewidth=2,
                 label=ALGORITHM_LABELS.get(str(alg), str(alg)),
             )
 
-        plt.xscale("log")
-        plt.yscale("log")
         plt.xlabel("Rozmiar pręta (tysiące elementów, skala logarytmiczna)")
-        plt.ylabel("Czas wykonania (ms, skala logarytmiczna)")
-        plt.title("Eksperyment 1: Skalowanie rozmiaru problemu (1000 kroków)")
+        plt.ylabel("Czas wykonania (s, skala logarytmiczna)")
+        plt.title("Eksperyment 1: Skalowanie rozmiaru problemu (100 000 kroków)")
         plt.grid(True, which="both", linestyle="--", alpha=0.6)
         plt.legend()
         plt.tight_layout()
@@ -217,8 +222,8 @@ def main() -> None:
             executable,
             algorithms,
             EXPERIMENT_1_PATH,
-            [100000, 1000000, 10000000, 100000000],
-            [1000] * 4,
+            [100000, 500000, 1000000, 5000000],
+            [100000] * 4,
         )
 
         print("=== Running Experiment 2: Step Count Scaling ===")

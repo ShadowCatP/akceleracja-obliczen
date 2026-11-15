@@ -7,3 +7,4 @@ experiment/
 
 .vscode/
 .idea/
+.venv/
