@@ -45,7 +45,9 @@ int main(int argc, char *argv[]) {
       algo_map = {{"naive", run_naive_sim},
                   {"avx512", run_avx512_sim},
                   {"avx2", run_avx2_sim},
-                  {"cuda", run_cuda_sim}};
+                  {"cuda", run_cuda_global_sim},
+                  {"cuda-global", run_cuda_global_sim},
+                  {"cuda-shared", run_cuda_shared_sim}};
 
   if (algo_map.find(algo_name) == algo_map.end()) {
     std::cerr << "unkown algorithm: " << algo_name << std::endl;

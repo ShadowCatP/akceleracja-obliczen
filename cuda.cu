@@ -20,7 +20,57 @@ __global__ void heat_kernel_global(const float *d_current, float *d_next, int n,
   }
 }
 
-std::vector<float> run_cuda_sim(int n, int steps, bool use_physical_formula) {
+__global__ void heat_kernel_shared(const float *d_current, float *d_next, int n,
+                                   bool use_improved_formula) {
+  extern __shared__ float s_data[];
+
+  int tid = threadIdx.x;
+  int i = blockDim.x * blockIdx.x + tid;
+
+  if (i < n) {
+    s_data[tid + 1] = d_current[i];
+  }
+  if (tid == 0 && i > 0) {
+    s_data[0] = d_current[i - 1];
+  }
+  if (tid == blockDim.x - 1 && i < n - 1) {
+    s_data[tid + 2] = d_current[i + 1];
+  }
+
+  __syncthreads();
+
+  if (i > 0 && i < n - 1) {
+    float center = s_data[tid + 1];
+    float left = s_data[tid];
+    float right = s_data[tid + 2];
+
+    if (use_improved_formula) {
+      d_next[i] = 0.5 * center + 0.25 * (left + right);
+    } else {
+      d_next[i] = 0.5 * (left + right);
+    }
+  } else if (i == 0 || i == n - 1) {
+    d_next[i] = 0.0;
+  }
+}
+
+std::vector<float> run_cuda_sim_impl(int n, int steps,
+                                     bool use_physical_formula,
+                                     bool use_shared_memory);
+
+std::vector<float> run_cuda_global_sim(int n, int steps,
+                                       bool use_physical_formula) {
+  return run_cuda_sim_impl(n, steps, use_physical_formula, false);
+}
+
+std::vector<float> run_cuda_shared_sim(int n, int steps,
+                                       bool use_physical_formula) {
+  return run_cuda_sim_impl(n, steps, use_physical_formula, true);
+}
+
+std::vector<float> run_cuda_sim_impl(int n, int steps,
+                                     bool use_physical_formula,
+                                     bool use_shared_memory) {
   std::vector<float> h_current(n, 0.0f);
   h_current[n / 2] = 100.0f;
 
@@ -36,8 +86,14 @@ std::vector<float> run_cuda_sim(int n, int steps, bool use_physical_formula) {
   int blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
 
   for (int t = 0; t < steps; ++t) {
-    heat_kernel_global<<<blocksPerGrid, threadsPerBlock>>>(
-        d_current, d_next, n, use_physical_formula);
+    if (use_shared_memory) {
+      heat_kernel_shared<<<blocksPerGrid, threadsPerBlock,
+                           (threadsPerBlock + 2) * sizeof(float)>>>(
+          d_current, d_next, n, use_physical_formula);
+    } else {
+      heat_kernel_global<<<blocksPerGrid, threadsPerBlock>>>(
+          d_current, d_next, n, use_physical_formula);
+    }
     std::swap(d_current, d_next);
   }
 
