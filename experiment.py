@@ -39,7 +39,9 @@ EXPERIMENT_DIR: Final[Path] = PROJECT_ROOT / "experiment"
 EXPERIMENT_1_PATH: Final[Path] = EXPERIMENT_DIR / "experiment1_size_scaling.csv"
 EXPERIMENT_2_PATH: Final[Path] = EXPERIMENT_DIR / "experiment2_steps_scaling.csv"
 EXPERIMENT_3_PATH: Final[Path] = EXPERIMENT_DIR / "experiment3_cuda_comparison.csv"
-EXPERIMENT_4_PLOT_PATH: Final[Path] = EXPERIMENT_DIR / "experiment4_cuda_speedup.png"
+EXPERIMENT_4_PLOT_PATH: Final[Path] = (
+    EXPERIMENT_DIR / "experiment4_cuda_execution_time.png"
+)
 
 
 def supports_avx512() -> bool:
@@ -187,7 +189,6 @@ def run_bandwidth_experiment(
                 "Steps",
                 "Time_ms",
                 "Bandwidth_GB_s",
-                "Memory_Traffic_GB",
             ]
         )
 
@@ -213,7 +214,6 @@ def run_bandwidth_experiment(
                         step_count,
                         average_time,
                         bandwidth_gb_s,
-                        total_bytes / 1e9,
                     ]
                 )
 
@@ -280,24 +280,22 @@ def generate_plots(experiment_dir: Path) -> None:
             )
             return
 
-        if "Memory_Traffic_GB" not in df3.columns:
-            df3["Memory_Traffic_GB"] = df3["Bandwidth_GB_s"] * df3["Time_ms"] / 1000
-
         plt.figure(figsize=(8, 5))
         for alg, group in df3.groupby("Algorithm"):
             plt.plot(
                 group["Steps"],
-                group["Memory_Traffic_GB"],
+                group["Bandwidth_GB_s"],
                 marker="o",
                 linewidth=2,
                 label=ALGORITHM_LABELS.get(str(alg), str(alg)),
             )
 
         plt.xscale("log")
-        plt.yscale("log")
         plt.xlabel("Liczba kroków")
-        plt.ylabel("Ruch globalnej pamięci (GB)")
-        plt.title("Eksperyment 3: Zużycie globalnej pamięci (N = 1 000 000)")
+        plt.ylabel("Przepustowość pamięci (GB/s)")
+        plt.title(
+            "Eksperyment 3: Porównanie zużycia przepustowości pasma pamięci (N = 1 000 000)"
+        )
         plt.grid(True, linestyle="--", alpha=0.6)
         plt.legend()
         plt.tight_layout()
@@ -307,33 +305,20 @@ def generate_plots(experiment_dir: Path) -> None:
         plt.close()
         print(f"Saved plot: {plot3_path}")
 
-        speedup_data = df3.pivot_table(
-            index="Steps",
-            columns="Algorithm",
-            values="Time_ms",
-            aggfunc="mean",
-        ).sort_index()
-        speedup = speedup_data["cuda-global"] / speedup_data["cuda-shared"]
-
         plt.figure(figsize=(8, 5))
-        plt.plot(
-            speedup.index,
-            speedup,
-            marker="o",
-            linewidth=2,
-            label="Globalny / Współdzielony",
-        )
-        plt.axhline(
-            1.0,
-            color="gray",
-            linestyle="--",
-            linewidth=1,
-            label="Brak przyspieszenia",
-        )
+        for alg, group in df3.groupby("Algorithm"):
+            plt.plot(
+                group["Steps"],
+                group["Time_ms"],
+                marker="o",
+                linewidth=2,
+                label=ALGORITHM_LABELS.get(str(alg), str(alg)),
+            )
+
         plt.xscale("log")
         plt.xlabel("Liczba kroków")
-        plt.ylabel("Speedup (Globalny / Współdzielony)")
-        plt.title("Eksperyment 4: Przyspieszenie Shared Memory (N = 1 000 000)")
+        plt.ylabel("Czas wykonania (ms)")
+        plt.title("Eksperyment 4: Czas wykonania CUDA (N = 1 000 000)")
         plt.grid(True, linestyle="--", alpha=0.6)
         plt.legend()
         plt.tight_layout()
