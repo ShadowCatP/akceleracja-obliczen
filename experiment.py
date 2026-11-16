@@ -21,6 +21,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parent
 BUILD_DIR = PROJECT_ROOT / "build"
 TIME_PATTERN = re.compile(r"Execution time:\s*([0-9.eE+-]+)\s*ms")
+GPU_TIME_PATTERN = re.compile(r"GPU (?:kernel )?execution time:\s*([0-9.eE+-]+)\s*ms")
 EXPERIMENT_RUNS: Final[int] = 3
 CUDA_THREADS_PER_BLOCK: Final[int] = 256
 CUDA_FLOAT_BYTES: Final[int] = 4
@@ -117,10 +118,13 @@ def run_simulation(executable: Path, algorithm: str, size: int, steps: int) -> f
         text=True,
         check=True,
     )
-    match = TIME_PATTERN.search(result.stdout)
+    cuda_algorithms = {"cuda", "cuda-global", "cuda-shared"}
+    time_pattern = GPU_TIME_PATTERN if algorithm in cuda_algorithms else TIME_PATTERN
+    match = time_pattern.search(result.stdout)
     if match is None:
         raise RuntimeError(
-            f"Could not parse execution time from output: {result.stdout!r}"
+            f"Could not parse execution time for {algorithm} from output: "
+            f"{result.stdout!r}"
         )
     return float(match.group(1))
 
@@ -220,7 +224,7 @@ def generate_plots(experiment_dir: Path) -> None:
         df1 = pd.read_csv(EXPERIMENT_1_PATH)
 
         plt.figure(figsize=(8, 5))
-        for alg, group in df1.groupby("Algorithm"):
+        for alg, group in df1[df1["Algorithm"] != "cuda-shared"].groupby("Algorithm"):
             plt.plot(
                 group["N"] / 1000,
                 group["Time_ms"] / 1000,
@@ -245,7 +249,7 @@ def generate_plots(experiment_dir: Path) -> None:
         df2 = pd.read_csv(EXPERIMENT_2_PATH)
 
         plt.figure(figsize=(8, 5))
-        for alg, group in df2.groupby("Algorithm"):
+        for alg, group in df2[df2["Algorithm"] != "cuda-shared"].groupby("Algorithm"):
             plt.plot(
                 group["Steps"] / 1000,
                 group["Time_ms"] / 1000,
@@ -389,7 +393,7 @@ def main() -> None:
                 executable,
                 EXPERIMENT_3_PATH,
                 [1000000] * 4,
-                [1000000, 10000000, 100000000, 1000000000],
+                [100000, 500000, 1000000, 5000000],
             )
 
         print("=== Experiments Complete! ===")
